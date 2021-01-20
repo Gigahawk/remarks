@@ -13,6 +13,7 @@ RM_TOOLS = {
     15: "Ballpoint",
     4: "Fineliner",
     17: "Fineliner",
+    21: "Fineliner",
     3: "Marker",
     16: "Marker",
     6: "Eraser",
@@ -70,8 +71,12 @@ def get_pdf_to_device_ratio(pdf_width, pdf_height):
 
 
 def process_tool_meta(pen, dims, w, opc, cc):
-    tool = RM_TOOLS[pen]
-    # print(tool)
+    try:
+        tool = RM_TOOLS[pen]
+        #print(tool)
+    except KeyError:
+        import pdb
+        pdb.set_trace()
 
     if tool == "Brush":
         pass
@@ -89,6 +94,7 @@ def process_tool_meta(pen, dims, w, opc, cc):
     elif tool == "Eraser":
         w = 1280 * w * w - 4800 * w + 4510
         cc = 2
+        opc = 0.0
     elif tool == "SharpPencil" or tool == "TiltPencil":
         w = 16 * w - 27
         opc = 0.9

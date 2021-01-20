@@ -37,7 +37,8 @@ def run_remarks(
     ann_type=None,
     combined_pdf=False,
 ):
-    for path in pathlib.Path(f"{input_dir}/").glob("*.pdf"):
+    for path in pathlib.Path(f"{input_dir}/").glob("*.metadata"):
+        pdf_path = path.with_suffix('.pdf')
         pages = list_pages_uuids(path)
         name = get_visible_name(path)
         rm_files = list_ann_rm_files(path)
@@ -54,7 +55,15 @@ def run_remarks(
         _dir = pathlib.Path(f"{output_dir}/{in_device_path}/{name}/")
         _dir.mkdir(parents=True, exist_ok=True)
 
-        pdf_src = fitz.open(path)
+        try:
+            pdf_src = fitz.open(pdf_path)
+        except:
+            print("Generating blank pdf with")
+            pdf_w, pdf_h = get_pdf_page_dims(None)
+            pdf_src = fitz.open()
+            for p in pages:
+                pdf_src.newPage(width=pdf_w, height=pdf_h)
+
 
         print(f"Working on PDF file: {path}")
         print(f'PDF visibleName: "{name}"')
@@ -63,7 +72,7 @@ def run_remarks(
         for rm_file in rm_files:
             page_idx = pages.index(f"{rm_file.stem}")
 
-            pdf_w, pdf_h = get_pdf_page_dims(path, page_idx=page_idx)
+            pdf_w, pdf_h = get_pdf_page_dims(pdf_path, page_idx=page_idx)
             scale = get_pdf_to_device_ratio(pdf_w, pdf_h)
 
             highlights, scribbles = parse_rm_file(rm_file)
@@ -95,7 +104,10 @@ def run_remarks(
             pdf_w_adj, pdf_h_adj = get_adjusted_pdf_dims(pdf_w, pdf_h, scale)
             pdf_rect = fitz.Rect(0, 0, pdf_w_adj, pdf_h_adj)
 
-            ann_page.showPDFpage(pdf_rect, pdf_src, pno=page_idx)
+            try:
+                ann_page.showPDFpage(pdf_rect, pdf_src, pno=page_idx)
+            except ValueError:
+                print("Blank page")
 
             should_extract_text = ann_type != "scribbles" and highlights
             extractable = is_text_extractable(pdf_src[page_idx])
@@ -119,7 +131,7 @@ def run_remarks(
                 ann_page = ann_doc[0]
                 ocred = True
 
-            ann_page = draw_pdf(parsed_data, ann_page)
+            ann_page = draw_pdf(parsed_data, ann_page, False)
 
             if "pdf" in targets:
                 subdir = prepare_subdir(_dir, "pdf")

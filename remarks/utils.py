@@ -45,14 +45,20 @@ def get_ui_path(path):
 
 
 def get_pdf_page_dims(path, page_idx=0):
-    with fitz.open(path) as doc:
-        first_page = doc.loadPage(page_idx)
-        return first_page.rect.width, first_page.rect.height
+    try:
+        with fitz.open(path) as doc:
+            first_page = doc.loadPage(page_idx)
+            return first_page.rect.width, first_page.rect.height
+    except:
+        return 445.0, 594.0
 
 
 def list_pages_uuids(path):
     content = read_meta_file(path, suffix=".content")
-    return content["pages"]
+    try:
+        return content["pages"]
+    except:
+        return []
 
 
 def list_ann_rm_files(path):
